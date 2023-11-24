@@ -29,7 +29,6 @@ let persons = [
 app.get('/info', (request, response) => {
     const date = new Date();
 
-    console.log('date :>> ', date);
     response.send(
         `<p>Phonebook has info for ${persons.length} people.</p>
         <p>${date}</p>`
@@ -40,8 +39,6 @@ const apiUrl = "/api/persons";
 
 app.get(apiUrl, (request, response) => {
     response.json(persons);
-    console.log('request :>> ', request);
-    console.log('response :>> ', response);
 });
 
 app.get(`${apiUrl}/:id`, (request, response) => {
@@ -62,7 +59,32 @@ app.delete(`${apiUrl}/:id`, (request, response) => {
     response.status(204).end()
 });
 
+const generateId = () => {
+    const max = 999999999;
+    return Math.floor(Math.random() * max);
+}
+
+app.post(apiUrl, (request, response) => {
+    const body = request.body;
+
+    if (!body.name) {
+        return response.status(400).json({
+            error: 'content missing'
+        })
+    }
+
+    const person = {
+        id: generateId(),
+        name: body.name,
+        number: body.number
+    }
+
+    persons = persons.concat(person);
+    console.log('person saved :>> ', person);
+    response.json(person);
+});
+
 const PORT = 3001
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
+    console.log(`Server running on port ${PORT}`);
 });
