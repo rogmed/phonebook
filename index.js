@@ -66,10 +66,20 @@ const generateId = () => {
 
 app.post(apiUrl, (request, response) => {
     const body = request.body;
+    const name = body.name;
+    const number = body.number;
 
-    if (!body.name) {
+    if (!name || !number) {
         return response.status(400).json({
             error: 'content missing'
+        })
+    }
+
+    const foundPerson = persons.find(p => p.name.toLowerCase() === name.toLowerCase());
+
+    if (foundPerson) {
+        return response.status(422).json({
+            error: 'name must be unique (case-insensitive)'
         })
     }
 
