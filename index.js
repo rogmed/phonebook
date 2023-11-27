@@ -1,5 +1,6 @@
 const express = require('express')
 const morgan = require('morgan')
+const cors = require('cors')
 const app = express()
 
 app.use(express.json());
@@ -14,6 +15,7 @@ app.use(
             (tokens.method(req, res) === 'POST' ? JSON.stringify(req.body) : '')
         ].join(' ')
     }));
+app.use(cors());
 
 let persons = [
     {
