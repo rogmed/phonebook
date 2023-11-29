@@ -1,10 +1,13 @@
 const express = require('express')
+const app = express()
 const morgan = require('morgan')
 const cors = require('cors')
-const app = express()
+const Person = require('./models/person')
 
 app.use(express.json());
 app.use(express.static('dist'));
+
+// LOG FORMAT
 app.use(
     morgan(function (tokens, req, res) {
         return [
@@ -18,94 +21,70 @@ app.use(
     }));
 app.use(cors());
 
-let persons = [
-    {
-        "id": 1,
-        "name": "Arto Hellas",
-        "number": "040-123456"
-    },
-    {
-        "id": 2,
-        "name": "Ada Lovelace",
-        "number": "39-44-5323523"
-    },
-    {
-        "id": 3,
-        "name": "Dan Abramov",
-        "number": "12-43-234345"
-    },
-    {
-        "id": 4,
-        "name": "Mary Poppendieck",
-        "number": "39-23-6423122"
-    }
-]
-
+// INFO PAGE
 app.get('/info', (request, response) => {
     const date = new Date();
-
-    response.send(
-        `<p>Phonebook has info for ${persons.length} people.</p>
-        <p>${date}</p>`
-    );
+    Person.find({}).then(persons => {
+        response.send(
+            `<p>Phonebook has info for ${persons.length} people.</p>
+            <p>${date}</p>`
+        );
+    })
 });
 
 const apiUrl = "/api/persons";
 
+// GET ALL
 app.get(apiUrl, (request, response) => {
-    response.json(persons);
+    Person.find({}).then(persons => {
+        response.json(persons);
+    })
 });
 
+// GET BY ID
 app.get(`${apiUrl}/:id`, (request, response) => {
-    const id = Number(request.params.id);
-    const person = persons.find(person => person.id === id);
-
-    if (person) {
-        response.json(person);
-    } else {
-        response.status(404).end();
-    }
+    Person.findById(request.params.id)
+        .then(person => {
+            if (person) {
+                response.json(person);
+            } else {
+                response.status(404).end();
+            }
+        })
+        .catch(error => {
+            console.log('error.message :>> ', error.message);
+            response.status(422).end();
+        });
 });
 
+// DELETE BY ID
 app.delete(`${apiUrl}/:id`, (request, response) => {
-    const id = Number(request.params.id)
-    persons = persons.filter(person => person.id !== id)
-
-    response.status(204).end()
+    Person.findByIdAndDelete(request.params.id)
+        .then(result => {
+            console.log(result);
+            console.log('no se borra???');
+            response.status(204).end();
+        });
 });
 
-const generateId = () => {
-    const max = 999999999;
-    return Math.floor(Math.random() * max);
-}
-
+// POST
 app.post(apiUrl, (request, response) => {
     const body = request.body;
-    const name = body.name;
-    const number = body.number;
 
-    if (!name || !number) {
-        return response.status(400).json({
+    if (!body.name || !body.number) {
+        return response.status(422).json({
             error: 'content missing'
         })
     }
 
-    const foundPerson = persons.find(p => p.name.toLowerCase() === name.toLowerCase());
-
-    if (foundPerson) {
-        return response.status(422).json({
-            error: 'name must be unique (case-insensitive)'
-        })
-    }
-
-    const person = {
-        id: generateId(),
+    const person = new Person({
         name: body.name,
         number: body.number
-    }
+    });
 
-    persons = persons.concat(person);
-    response.json(person);
+    person.save().then(savedPerson => {
+        response.json(savedPerson);
+    });
 });
 
 const PORT = process.env.PORT || 3001
