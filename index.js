@@ -35,14 +35,16 @@ app.get('/info', (request, response) => {
 const apiUrl = "/api/persons";
 
 // GET ALL
-app.get(apiUrl, (request, response) => {
-    Person.find({}).then(persons => {
-        response.json(persons);
-    })
+app.get(apiUrl, (request, response, next) => {
+    Person.find({})
+        .then(persons => {
+            response.json(persons);
+        })
+        .catch(error => next(error));
 });
 
 // GET BY ID
-app.get(`${apiUrl}/:id`, (request, response) => {
+app.get(`${apiUrl}/:id`, (request, response, next) => {
     Person.findById(request.params.id)
         .then(person => {
             if (person) {
@@ -51,24 +53,20 @@ app.get(`${apiUrl}/:id`, (request, response) => {
                 response.status(404).end();
             }
         })
-        .catch(error => {
-            console.log('error.message :>> ', error.message);
-            response.status(422).end();
-        });
+        .catch(error => next(error));
 });
 
 // DELETE BY ID
-app.delete(`${apiUrl}/:id`, (request, response) => {
+app.delete(`${apiUrl}/:id`, (request, response, next) => {
     Person.findByIdAndDelete(request.params.id)
         .then(result => {
-            console.log(result);
-            console.log('no se borra???');
             response.status(204).end();
-        });
+        })
+        .catch(error => next(error));
 });
 
 // POST
-app.post(apiUrl, (request, response) => {
+app.post(apiUrl, (request, response, next) => {
     const body = request.body;
 
     if (!body.name || !body.number) {
@@ -82,10 +80,26 @@ app.post(apiUrl, (request, response) => {
         number: body.number
     });
 
-    person.save().then(savedPerson => {
-        response.json(savedPerson);
-    });
+    person.save()
+        .then(savedPerson => {
+            response.json(savedPerson);
+        })
+        .catch(error => next(error));
 });
+
+// Error handling
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message);
+
+    if (error.name === 'CastError') {
+        return response.status(400).send({ error: 'malformatted id' });
+    }
+
+    next(error)
+}
+
+// this has to be the last loaded middleware.
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
