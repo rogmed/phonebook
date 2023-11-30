@@ -25,13 +25,13 @@ content-type: application/json
 }
 
 ###
-DELETE http://localhost:3001/api/persons/65676ce19e5eb9be3d51cacc
+DELETE http://localhost:3001/api/persons/132
 
 ###
 PUT http://localhost:3001/api/persons/6565f4e212ffad7a8b948181
 content-type: application/json
 
 {
-  "name": "io",
-  "number": "123123"
+  "name": "ios",
+  "number": "12312312"
 }
